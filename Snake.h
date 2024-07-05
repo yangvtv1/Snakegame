@@ -43,12 +43,18 @@ typedef struct {
     void (*PointerFunction)(void*);
 }menu_t;
 
+typedef struct{
+    uint32_t x;
+    uint32_t y;
+}axis_t;
+
 typedef struct {
     void (*menu_update)(void *);
     void (*menu_wait)(void *);
     void (*cal_axis)(void *);
     void (*menu_fruit)(void *);
     void (*ChangeState)(void *);
+    axis_t   *axis[100];
     uint32_t X;
     uint32_t Y;
     uint8_t  Idx;

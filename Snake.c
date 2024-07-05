@@ -67,6 +67,7 @@ void Initial(void *arg) {
     G->SnakeOld[1][1] = G->Snake[1][1];
     G->SnakeOld[2][0] = G->Snake[2][0];
     G->SnakeOld[2][1] = G->Snake[2][1];
+    G->axis[0] = (axis_t *)malloc(sizeof(axis_t));
     G->menu_update     = &_menu_update;
     G->menu_wait       = &_menu_wait;
     G->cal_axis        = &_cal_axis;
