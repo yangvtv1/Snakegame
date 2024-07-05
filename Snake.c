@@ -41,6 +41,9 @@ int main (void) {
     game = (game_t *)malloc(10 * sizeof(game_t));
     Initial(game);
     game->ChangeState(game);
+    //while(1){
+       //game->menu_fruit(game);
+    //}
     printf("Game Over!!!\n");
     scanf("%hhd", &game->exit);
     free(game);
@@ -312,30 +315,30 @@ void _menu_fruit(void *arg){
     char getbuf[11]="";
     uint8_t axisX = 0;
     uint8_t axisY = 0;
-    if(!G->Fruit){
+    if(/*count++<=10*/!G->Fruit){
         G->Fruit = rand();
         sprintf(getbuf, "%d", G->Fruit);
         axisX = (getbuf[0]-0x30)*10 + (getbuf[1]-0x30);
         axisY = axisX;
-        if(axisX >= G->X) {
-            axisX -= G->X;
-            if(axisX > G->X) {
-               axisX -= G->X; 
-            }
-        }
         
         for(int y = 0; y < 10; y++) {
+            if(!axisX){
+                axisX++;
+            }else if(axisX >= (G->X - 1)){
+                axisX -= G->X;
+            }
+            
             if(!axisY){
                 axisY++;
-            }else if(axisY >= G->Y){
+            }else if(axisY >= (G->Y - 1)){
                 axisY -= G->Y;
-            }else{
-                break;
             }
         }
         G->FruitX = axisX;
         G->FruitY = axisY;
+        //printf("G->FruitX=%d, G->FruitY=%d\n", G->FruitX, G->FruitY);
     }
+    //if(count>=10)count=11;
 }
 
 void _cal_axis(void *arg){
