@@ -39,6 +39,26 @@
 
 #define LOGA(fmt,...)  printf("[%s][%d]: "fmt"", __FUNCTION__, __LINE__, ##__VA_ARGS__);
 
+#define SNK_HEAD                        0
+#define SNK_BODY                        1
+#define SNK_TAIL                        2
+
+#define UP                              8
+#define DOWN                            2
+#define LEFT                            4
+#define RIGHT                           6
+
+#define BURN_INIT                       3
+#define HARDWARE_1                    1
+#define HARDWARE_2                    2
+#define HARDWARE_3                    3
+#define HARDWARE_4                    4            
+#define HARDWARE(_name)               HARDWARE_##_name
+     
+#define EOK  1
+#define ERR  0
+
+
 typedef struct {
     void (*PointerFunction)(void*);
 }menu_t;
@@ -51,7 +71,6 @@ typedef struct{
 typedef struct {
     void (*menu_update)(void *);
     void (*menu_wait)(void *);
-    void (*cal_axis)(void *);
     void (*menu_fruit)(void *);
     void (*ChangeState)(void *);
     axis_t   *axis[100];
@@ -60,12 +79,16 @@ typedef struct {
     uint8_t  Idx;
     uint32_t CountUpdate;
     uint32_t Move;
-    uint8_t  Snake[3][2];
-    uint8_t  SnakeOld[3][2];
     char     exit;
     uint32_t Fruit;
-    uint8_t FruitX;
-    uint8_t FruitY;
+    uint8_t  FruitX;
+    uint8_t  FruitY;
+    uint8_t  Move4;
+    uint8_t  Move8;
+    uint8_t  Move6;
+    uint8_t  Move2;
+    uint32_t Point;
+    uint8_t  Position;
 }game_t;
 
 typedef enum {
@@ -73,4 +96,14 @@ typedef enum {
     WAIT
 }game_enum;
 
+
+#define CHAIN_SNAKE(_name, _x, _y)  \
+        [_name] = {         \
+                .x = _x,    \
+                .y = _y,    \
+        }
+
+#define SNAKE(_n, _ax, _ay)     CHAIN_SNAKE(_name, _x, _y)             
+
+        
 

@@ -32,7 +32,12 @@
 void _menu_update(void *arg);
 void _menu_wait(void *arg);
 void Initial(void *arg);
-void _cal_axis(void *arg);
+void _MoveDown(void *arg);
+void _MoveUp(void *arg);
+void _MoveLeft(void *arg);
+void _MoveRight(void *arg);
+uint8_t _ProcessMove(void *arg);
+void _JumpStep(void *arg);
 void _ChangeState(void *arg);
 void _menu_fruit(void *arg);
 game_t *game;
@@ -41,9 +46,10 @@ int main (void) {
     game = (game_t *)malloc(10 * sizeof(game_t));
     Initial(game);
     game->ChangeState(game);
-    //while(1){
-       //game->menu_fruit(game);
-    //}
+    //  while(1){
+    //     game->menu_fruit(game);
+    //  }
+
     printf("Game Over!!!\n");
     scanf("%hhd", &game->exit);
     free(game);
@@ -51,26 +57,25 @@ int main (void) {
 }
 void Initial(void *arg) {
     game_t *G = arg;
-    G->X               = 30;
-    G->Y               = 14;
+    G->X               = 31;
+    G->Y               = 16;
     G->CountUpdate     = 1;
     G->Fruit           = 0;
-    G->Snake[0][0]     = (G->X/2); // 15
-    G->Snake[0][1]     = (G->Y/2); // 7
-    G->Snake[1][0]     = (G->X/2);
-    G->Snake[1][1]     = (G->Y/2)-1;
-    G->Snake[2][0]     = (G->X/2);
-    G->Snake[2][1]     = (G->Y/2)-2;
-    G->SnakeOld[0][0] = G->Snake[0][0]; 
-    G->SnakeOld[0][1] = G->Snake[0][1]; 
-    G->SnakeOld[1][0] = G->Snake[1][0];
-    G->SnakeOld[1][1] = G->Snake[1][1];
-    G->SnakeOld[2][0] = G->Snake[2][0];
-    G->SnakeOld[2][1] = G->Snake[2][1];
-    G->axis[0] = (axis_t *)malloc(sizeof(axis_t));
+    G->Move2 = 3;
+    G->Move4 = 3;
+    G->Move6 = 3;
+    G->Move8 = 3;
+    G->Point = 0;
+    G->Position = 0;
+    for(int i = 0; i < BURN_INIT; i++){
+        G->axis[i]    = (axis_t *)malloc(sizeof(axis_t));
+    }
+    for(int i = 0; i < BURN_INIT; i++){
+        G->axis[i]->x    = (G->X/2)-i;
+        G->axis[i]->y    = (G->Y/2);
+    }
     G->menu_update     = &_menu_update;
     G->menu_wait       = &_menu_wait;
-    G->cal_axis        = &_cal_axis;
     G->menu_fruit      = &_menu_fruit;
     G->ChangeState     = &_ChangeState;
     G->Idx             = UPDATE;
@@ -85,230 +90,338 @@ void _menu_update(void *arg){
     G->menu_fruit(G);
     while (G->CountUpdate) {
         system("@cls||clear");
-        for (int YIndex = 0; YIndex < G->Y; YIndex++) {
+        for (int YIndex = 0; YIndex < G->Y + 2; YIndex++) {
             for (int XIndex = 0; XIndex < G->X; XIndex++) {
                 if(!YIndex) {
-                    printf("_");
-                }
-                
-                if (G->Snake[0][0] + 1 >= G->X 
-                    || G->Snake[0][0] <= 0
-                    || G->Snake[0][1] + 1 >= G->Y
-                    || G->Snake[0][1] <= 0) {
-                    return;
-                }else{
-                    if((G->Snake[0][1] == G->FruitY) && (G->Snake[0][0] == G->FruitX) && G->Fruit) {
-                        G->Fruit = 0;
-                    }else if(YIndex == G->FruitY && XIndex == G->FruitX && G->Fruit){
-                        printf("@");
-                    }else if((YIndex == G->Snake[2][1]) && (XIndex == G->Snake[2][0])) {
-                        if((G->Snake[2][1] > G->SnakeOld[2][1]) 
-                            || G->Snake[2][1] < G->SnakeOld[2][1]
-                            || G->Snake[2][1] == G->SnakeOld[2][1]){
-                            printf("2");
-                        }
-                    }else if((YIndex == G->Snake[1][1]) && (XIndex == G->Snake[1][0])) {
-                        if((G->Snake[1][1] > G->SnakeOld[1][1]) 
-                            || G->Snake[1][1] < G->SnakeOld[1][1]
-                            || G->Snake[1][1] == G->SnakeOld[1][1]){
-                            printf("1");
-                        }
-                    }else if((YIndex == G->Snake[0][1]) && (XIndex == G->Snake[0][0])) {
-                        if((G->Snake[0][1] > G->SnakeOld[0][1]) 
-                            || G->Snake[0][1] < G->SnakeOld[0][1]
-                            || G->Snake[0][1] == G->SnakeOld[0][1]){
-                            printf("0");
-                        }
-                    }else if((YIndex == G->Snake[0][1]) && (XIndex+1 == G->X)){
-                        printf("|");
-                    }else if((YIndex && !XIndex) || (YIndex && (XIndex+1 == G->X))) {
-                        if ((YIndex != G->Snake[0][1]) || (YIndex && !XIndex))
-                            printf("|");
-                    }else if(YIndex && (YIndex + 1 != G->Y)){
+                    if((!YIndex && !XIndex) || (!YIndex && XIndex == 1)){
                         printf(" ");
+                    }else{
+                        printf("#");
                     }
                 }
                 
-                if((YIndex + 1 == G->Y) && (XIndex+1 != G->X) && (XIndex+2 != G->X)) {
-                    printf("X");
+                if (G->axis[0]->x + 1 >= G->X || G->axis[0]->x <= 0 || G->axis[0]->y + 1 >= G->Y || G->axis[0]->y <= 0) {
+                    return;
+                }else{
+                    if((G->axis[0]->y == G->FruitY) && (G->axis[0]->x == G->FruitX) && G->Fruit) {
+                        G->Fruit = 0;
+                        G->Point++;
+                    }else if(YIndex == G->FruitY && XIndex == G->FruitX && G->Fruit){
+                        printf("@");
+                    }else if((YIndex == G->axis[G->Position]->y) && (XIndex == G->axis[G->Position]->x)){
+                        if(G->Position == 0) printf("%d", G->Position);
+                        else if(G->Position == 1) printf("%d", G->Position);
+                        else if(G->Position == 2) printf("%d", G->Position);
+                    }else if((XIndex == G->X/2) && (YIndex == G->Y)){
+                        printf("%d", G->Point);
+                    }else if(((YIndex == G->axis[0]->y) && (XIndex+1 == G->X))
+                             || (YIndex == G->axis[0]->y && XIndex == 1)){
+                        printf("X");
+                    }else if((YIndex && !XIndex) || (YIndex && (XIndex+1 == G->X))
+                             || (YIndex && XIndex == 1)) {
+                        if ((YIndex != G->axis[0]->y) || (YIndex && !XIndex))
+                            if(YIndex && !XIndex) {
+                                printf("%02d", YIndex);
+                            }else if((YIndex && XIndex) || (YIndex && XIndex == 1)){
+                                printf("X");
+                            }
+                    }else if(YIndex && (YIndex + 1 != G->Y)){
+                        if((YIndex == G->Y + 1) && (XIndex+1 != G->X)){
+                            printf("X");
+                        }else{
+                            printf(" ");
+                        }
+                    }
                 }
+                
+                 if((YIndex + 1 == G->Y) && (XIndex+1 != G->X) && (XIndex+2 != G->X)) {
+                     if(XIndex != 1)
+                        printf("X");
+                 }
             }
             printf("\n");
+            if(G->Position < BURN_INIT - 1)
+                G->Position++;
         }
-        //sleep(1);
         G->CountUpdate--;
-        G->cal_axis(G);
     }
     G->Idx = WAIT;
     G->ChangeState(G);
 }
 void _menu_wait(void *arg){
     game_t *G = arg;
-    static uint8_t Move4 = 3;
-    static uint8_t Move8 = 3;
-    static uint8_t Move6 = 3;
-    static uint8_t Move2 = 3;
     scanf("%d", &G->Move);
-    if((G->Move == 2) || (G->Move == 4) || (G->Move == 8) || (G->Move == 6)) {
+    if((G->Move == DOWN) || (G->Move == LEFT) || (G->Move ==UP) || (G->Move == RIGHT)) {
         G->Idx = UPDATE;
         G->CountUpdate = 1;
-        if(G->Move == 2) {
-            if((G->Snake[0][0] > G->Snake[1][0] && G->Snake[1][0] > G->Snake[2][0])
-                || (G->Snake[0][0] < G->Snake[1][0] && G->Snake[1][0] < G->Snake[2][0])
-                || (G->Snake[0][1] > G->Snake[1][1] && G->Snake[1][0] < G->Snake[2][0])
-                || (G->Snake[0][1] > G->Snake[1][1] && G->Snake[1][0] > G->Snake[2][0])){
-               if(Move2 == 3) {
-                    Move2 = 2;
-                    Move4 = 3;
-                    Move6 = 3;
-                    Move8 = 3;
-                    if(G->Snake[0][0] < G->Snake[1][0] && G->Snake[1][0] < G->Snake[2][0]){
-                        G->Snake[2][0]--;
-                        G->Snake[1][0]--;
-                        G->Snake[0][1]++;
-                    }else{
-                        G->Snake[2][0]++;
-                        G->Snake[1][0]++;
-                        G->Snake[0][1]++;
-                    }
-                }else if(Move2 == 2) {
-                    Move2 = 1;
-                    if(G->Snake[0][1] > G->Snake[1][1] && G->Snake[1][0] < G->Snake[2][0]){
-                        G->Snake[2][0]--;
-                        G->Snake[1][1]++;
-                        G->Snake[0][1]++;                       
-                    }else{
-                        G->Snake[2][0]++;
-                        G->Snake[1][1]++;
-                        G->Snake[0][1]++;
-                    }
-                }
-            }else if(G->Snake[0][0] == G->Snake[1][0] && G->Snake[1][0] == G->Snake[2][0]){
-                G->Snake[2][1]++;
-                G->Snake[1][1]++;
-                G->Snake[0][1]++;
-                Move2 = 3;
-            }
-        }
-        else if(G->Move == 8) {
-            if((G->Snake[0][0] > G->Snake[1][0] && G->Snake[1][0] > G->Snake[2][0])
-                || (G->Snake[0][1] < G->Snake[1][1] && G->Snake[1][0] > G->Snake[2][0])
-                || (G->Snake[0][0] < G->Snake[1][0] && G->Snake[1][0] < G->Snake[2][0])
-                || (G->Snake[0][1] < G->Snake[1][1] && G->Snake[1][0] < G->Snake[2][0])){
-               if(Move8 == 3) {
-                    Move8 = 2;
-                    Move2 = 3;
-                    Move4 = 3;
-                    Move6 = 3;
-                    if(G->Snake[0][0] < G->Snake[1][0] && G->Snake[1][0] < G->Snake[2][0]){
-                        G->Snake[2][0]--;
-                        G->Snake[1][0]--;
-                        G->Snake[0][1]--;                        
-                    }else{
-                        G->Snake[2][0]++;
-                        G->Snake[1][0]++;
-                        G->Snake[0][1]--;
-                    }
-                }else if(Move8 == 2) {
-                    Move8 = 1;
-                    if(G->Snake[0][1] < G->Snake[1][1] && G->Snake[1][0] < G->Snake[2][0]){
-                        G->Snake[2][0]--;
-                        G->Snake[1][1]--;
-                        G->Snake[0][1]--;                        
-                    }else{
-                        G->Snake[2][0]++;
-                        G->Snake[1][1]--;
-                        G->Snake[0][1]--;
-                    }
-                }
-            }else if(G->Snake[0][1] <= G->Snake[1][1] && G->Snake[1][1] <= G->Snake[2][1]){
-                G->Snake[2][1]--;
-                G->Snake[1][1]--;
-                G->Snake[0][1]--;
-                Move8 = 3;
-            }
-        }
-        else if(G->Move == 4) {
-            if((G->Snake[0][1] > G->Snake[1][1] && G->Snake[1][1] > G->Snake[2][1])
-                || (G->Snake[0][0] < G->Snake[1][0] && G->Snake[1][1] > G->Snake[2][1])
-                || (G->Snake[0][1] < G->Snake[1][1] && G->Snake[1][1] < G->Snake[2][1])
-                || (G->Snake[0][0] < G->Snake[1][0] && G->Snake[1][1] < G->Snake[2][1])){
-               if(Move4 == 3) {
-                    Move4 = 2;
-                    Move2 = 3;
-                    Move6 = 3;
-                    Move8 = 3;
-                    if(G->Snake[0][1] < G->Snake[1][1] && G->Snake[1][1] < G->Snake[2][1]){
-                        G->Snake[2][1]--;
-                        G->Snake[1][1]--;
-                        G->Snake[0][0]--;                        
-                    }else{
-                        G->Snake[2][1]++;
-                        G->Snake[1][1]++;
-                        G->Snake[0][0]--;
-                    }
-                }else if(Move4 == 2) {
-                    Move4 = 1;
-                    if(G->Snake[0][0] < G->Snake[1][0] && G->Snake[1][1] < G->Snake[2][1]){
-                        G->Snake[2][1]--;
-                        G->Snake[1][0]--;
-                        G->Snake[0][0]--;                    
-                    }else{
-                        G->Snake[2][1]++;
-                        G->Snake[1][0]--;
-                        G->Snake[0][0]--;
-                    }
-                }
-            }else if(G->Snake[0][1] == G->Snake[1][1] && G->Snake[1][1] == G->Snake[2][1]){
-                G->Snake[2][0]--;
-                G->Snake[1][0]--;
-                G->Snake[0][0]--;
-                Move4 = 3;
-            }
-        }
-        else if(G->Move == 6) {
-            if((G->Snake[0][1] > G->Snake[1][1] && G->Snake[1][1] > G->Snake[2][1])
-                || (G->Snake[0][0] > G->Snake[1][0] && G->Snake[1][1] > G->Snake[2][1])
-                || (G->Snake[0][1] < G->Snake[1][1] && G->Snake[1][1] < G->Snake[2][1])
-                || (G->Snake[0][0] > G->Snake[1][0] && G->Snake[1][1] < G->Snake[2][1])){
-               if(Move6 == 3) {
-                    Move6 = 2;
-                    Move2 = 3;
-                    Move4 = 3;
-                    Move8 = 3;
-                    if(G->Snake[0][1] < G->Snake[1][1] && G->Snake[1][1] < G->Snake[2][1]){
-                        G->Snake[2][1]--;
-                        G->Snake[1][1]--;
-                        G->Snake[0][0]++;         
-                    }else{
-                        G->Snake[2][1]++;
-                        G->Snake[1][1]++;
-                        G->Snake[0][0]++;
-                    }
-                }else if(Move6 == 2) {
-                    Move6 = 1;
-                    if(G->Snake[0][0] > G->Snake[1][0] && G->Snake[1][1] < G->Snake[2][1]){
-                        G->Snake[2][1]--;
-                        G->Snake[1][0]++;
-                        G->Snake[0][0]++;
-                    }else{
-                        G->Snake[2][1]++;
-                        G->Snake[1][0]++;
-                        G->Snake[0][0]++;
-                    }
-                }
-            }else if(G->Snake[0][1] == G->Snake[1][1] && G->Snake[1][1] == G->Snake[2][1]){
-                G->Snake[2][0]++;
-                G->Snake[1][0]++;
-                G->Snake[0][0]++;
-                Move6 = 3;
-            }
-        }
+        if(G->Move == DOWN) _MoveDown(G);
+        else if(G->Move == UP) _MoveUp(G);
+        else if(G->Move == LEFT) _MoveLeft(G);
+        else if(G->Move == RIGHT) _MoveRight(G);
     } else {
         G->Idx = WAIT;
     }
+    if(G->Position) G->Position = 0;
     G->ChangeState(G);
 }
+void _MoveDown(void *arg){
+    game_t *G = arg;
+    if(_ProcessMove(G) == EOK){
+        if(G->Move2 == 3) {
+            _JumpStep(G);
+            for(int i = 0; i < BURN_INIT - 1; i++){
+                if(G->axis[i]->x < G->axis[i+1]->x){
+                    if(i == BURN_INIT - 2){
+                        for(int j = 1; j <= BURN_INIT - 1; j++){
+                            G->axis[j]->x--;
+                        }
+                        G->axis[0]->y++;
+                    }
+                }else{
+                    for(int j = 1; j <= BURN_INIT - 1; j++){
+                        G->axis[j]->x++;
+                    }
+                    G->axis[0]->y++;                    
+                    break;
+                }
+            }
+        }else if(G->Move2 == 2) {
+            G->Move2 = 1;
+            for(int i = 0; i < BURN_INIT - 1; i++){
+                if((G->axis[i]->y > G->axis[i+1]->y) && (G->axis[i+1]->x < G->axis[i+2]->x)){
+                    G->axis[BURN_INIT-1]->x--;
+                    for(int j = 0; j < BURN_INIT - 1; j++){
+                        G->axis[j]->y++;
+                    }
+                    break;
+                }else{
+                    for(int j = 0; j < BURN_INIT - 1; j++){
+                            G->axis[j]->y++;
+                    }
+                    G->axis[BURN_INIT-1]->x++;
+                    break;
+                }
+            }
+        }
+    }else{
+        for(int i = 0; i < BURN_INIT - 1; i++){
+            if(G->axis[i]->x == G->axis[i+1]->x){
+                if(i+1 == BURN_INIT-1){
+                    for(int j = 0; j < BURN_INIT; j++){
+                        G->axis[j]->y++;
+                    }
+                }
+            }
+        }
+        G->Move2=3;
+    }
+}
+void _MoveUp(void *arg){
+    game_t *G = arg;
+    if(_ProcessMove(G) == EOK){
+        if(G->Move8 == 3) {
+            _JumpStep(G);
+            for(int i = 0; i < BURN_INIT - 1; i++){
+                if(G->axis[i]->x < G->axis[i+1]->x){
+                    if(i == BURN_INIT - 2){
+                        for(int j = 1; j <= BURN_INIT - 1; j++){
+                            G->axis[j]->x--;
+                        }
+                        G->axis[0]->y--;
+                    }
+                }else{
+                    for(int j = 1; j <= BURN_INIT - 1; j++){
+                        G->axis[j]->x++;
+                    }
+                    G->axis[0]->y--;                    
+                    break;
+                }
+            }
+        }else if(G->Move8 == 2) {
+            G->Move8 = 1;
+            for(int i = 0; i < BURN_INIT - 1; i++){
+                if((G->axis[i]->y < G->axis[i+1]->y) && (G->axis[i+1]->x < G->axis[i+2]->x)){
+                    G->axis[BURN_INIT-1]->x--;
+                    for(int j = 0; j < BURN_INIT - 1; j++){
+                        G->axis[j]->y--;
+                    }
+                    break;
+                }else{
+                    for(int j = 0; j < BURN_INIT - 1; j++){
+                            G->axis[j]->y--;
+                    }
+                    G->axis[BURN_INIT-1]->x++;
+                    break;
+                }
+            }
+        }
+    }else {
+        for(int i = 0; i < BURN_INIT - 1; i++){
+            if(G->axis[i]->x == G->axis[i+1]->x){
+                if(i+1 == BURN_INIT-1){
+                    for(int j = 0; j < BURN_INIT; j++){
+                        G->axis[j]->y--;
+                    }
+                }
+            }
+        }
+        G->Move8 = 3;
+    }
+}
+void _MoveLeft(void *arg){
+    game_t *G = arg;
+    if(_ProcessMove(G) == EOK){
+        if(G->Move4 == 3) {
+            _JumpStep(G);
+            for(int i = 0; i < BURN_INIT - 1; i++){
+                if(G->axis[i]->y < G->axis[i+1]->y){
+                    if(i == BURN_INIT - 2){
+                        for(int j = 1; j <= BURN_INIT - 1; j++){
+                            G->axis[j]->y--;
+                        }
+                        G->axis[0]->x--;
+                    }
+                }else{
+                    for(int j = 1; j <= BURN_INIT - 1; j++){
+                        G->axis[j]->y++;
+                    }
+                    G->axis[0]->x--;                    
+                    break;
+                }
+            }
+        }else if(G->Move4 == 2) {
+            G->Move4 = 1;
+            for(int i = 0; i < BURN_INIT - 1; i++){
+                if((G->axis[i]->x < G->axis[i+1]->x) && (G->axis[i+1]->y < G->axis[i+2]->y)){
+                    G->axis[BURN_INIT-1]->y--;
+                    for(int j = 0; j < BURN_INIT - 1; j++){
+                        G->axis[j]->x--;
+                    }
+                    break;
+                }else{
+                    for(int j = 0; j < BURN_INIT - 1; j++){
+                            G->axis[j]->x--;
+                    }
+                    G->axis[BURN_INIT-1]->y++;
+                    break;
+                }
+            }
+        }
+    }else{
+        for(int i = 0; i < BURN_INIT - 1; i++){
+            if(G->axis[i]->y == G->axis[i+1]->y){
+                if(i+1 == BURN_INIT-1){
+                    for(int j = 0; j < BURN_INIT; j++){
+                        G->axis[j]->x--;
+                    }
+                }
+            }
+        }
+        G->Move4 = 3;
+    }
+}
+void _MoveRight(void *arg){
+    game_t *G = arg;
+    if(_ProcessMove(G) == EOK){
+        if(G->Move6 == 3) {
+             _JumpStep(G);
+            for(int i = 0; i < BURN_INIT - 1; i++){
+                if(G->axis[i]->y < G->axis[i+1]->y){
+                    if(i == BURN_INIT - 2){
+                        for(int j = 1; j <= BURN_INIT - 1; j++){
+                            G->axis[j]->y--;
+                        }
+                        G->axis[0]->x++;
+                    }
+                }else{
+                    for(int j = 1; j <= BURN_INIT - 1; j++){
+                        G->axis[j]->y++;
+                    }
+                    G->axis[0]->x++;                    
+                    break;
+                }
+            }
+        }else if(G->Move6 == 2) {
+            G->Move6 = 1;
+            for(int i = 0; i < BURN_INIT - 1; i++){
+                if((G->axis[i]->x > G->axis[i+1]->x) && (G->axis[i+1]->y < G->axis[i+2]->y)){
+                    G->axis[BURN_INIT-1]->y--;
+                    for(int j = 0; j < BURN_INIT - 1; j++){
+                        G->axis[j]->x++;
+                    }
+                    break;
+                }else{
+                    for(int j = 0; j < BURN_INIT - 1; j++){
+                            G->axis[j]->x++;
+                    }
+                    G->axis[BURN_INIT-1]->y++;
+                    break;
+                }
+            }
+        }
+    }else{
+        for(int i = 0; i < BURN_INIT - 1; i++){
+            if(G->axis[i]->y == G->axis[i+1]->y){
+                if(i+1 == BURN_INIT-1){
+                    for(int j = 0; j < BURN_INIT; j++){
+                        G->axis[j]->x++;
+                    }
+                }
+            }
+        }
+        G->Move6 = 3;
+    }
+}
+
+uint8_t _ProcessMove(void *arg){
+    game_t *G = arg;
+    uint8_t ret = ERR;
+    uint32_t index = 0;
+    for(index = 0; index < BURN_INIT - 1; index++){
+        if(G->Move == DOWN || G->Move == UP){
+            if((G->axis[index]->x > G->axis[index + 1]->x) || (G->axis[index]->x < G->axis[index + 1]->x)){
+                if(index == BURN_INIT - 2){
+                    ret = EOK;
+                    break;
+                }
+            }
+        }else if(G->Move == LEFT || G->Move == RIGHT){
+            if((G->axis[index]->y > G->axis[index + 1]->y) || (G->axis[index]->y < G->axis[index + 1]->y)){
+                if(index == BURN_INIT - 2){
+                    ret = EOK;
+                    break;
+                }
+            }
+        }
+    }
+    return ret;
+}
+
+void _JumpStep(void *arg){
+    game_t *G = arg;
+    if(G->Move == DOWN){
+        G->Move2 = 2;
+        G->Move4 = 3;
+        G->Move6 = 3;
+        G->Move8 = 3;
+    }else if(G->Move == UP){
+        G->Move8 = 2;
+        G->Move2 = 3;
+        G->Move4 = 3;
+        G->Move6 = 3;       
+    }else if(G->Move == LEFT){
+        G->Move4 = 2;
+        G->Move2 = 3;
+        G->Move6 = 3;
+        G->Move8 = 3;      
+    }else if(G->Move == RIGHT){
+        G->Move6 = 2;
+        G->Move2 = 3;
+        G->Move4 = 3;
+        G->Move8 = 3;
+    }
+}
+
 
 void _menu_fruit(void *arg){
     game_t *G = arg;
@@ -316,23 +429,30 @@ void _menu_fruit(void *arg){
     char getbuf[11]="";
     uint8_t axisX = 0;
     uint8_t axisY = 0;
-    if(/*count++<=10*/!G->Fruit){
+    if(/*count++<=1*/!G->Fruit){
         G->Fruit = rand();
         sprintf(getbuf, "%d", G->Fruit);
         axisX = (getbuf[0]-0x30)*10 + (getbuf[1]-0x30);
         axisY = axisX;
         
-        for(int y = 0; y < 10; y++) {
-            if(!axisX){
-                axisX++;
+        for(int x = 0; x < 10; x++) {
+            if(!axisX || axisX == 1){
+                axisX += 2;
             }else if(axisX >= (G->X - 1)){
                 axisX -= G->X;
+            }else{
+                break;
             }
-            
+        }
+
+         for(int y = 0; y < 10; y++) {    
             if(!axisY){
                 axisY++;
-            }else if(axisY >= (G->Y - 1)){
-                axisY -= G->Y;
+            }else if((axisY >= G->Y) || (axisY == G->Y - 1)){
+                if(axisY == G->Y - 1) axisY = 1;
+                else axisY -= G->Y;
+            }else{
+                break;
             }
         }
         G->FruitX = axisX;
@@ -340,16 +460,6 @@ void _menu_fruit(void *arg){
         //printf("G->FruitX=%d, G->FruitY=%d\n", G->FruitX, G->FruitY);
     }
     //if(count>=10)count=11;
-}
-
-void _cal_axis(void *arg){
-    game_t *G = arg;
-    G->SnakeOld[0][0] = G->Snake[0][0]; 
-    G->SnakeOld[0][1] = G->Snake[0][1]; 
-    G->SnakeOld[1][0] = G->Snake[1][0];
-    G->SnakeOld[1][1] = G->Snake[1][1];
-    G->SnakeOld[2][0] = G->Snake[2][0];
-    G->SnakeOld[2][1] = G->Snake[2][1];
 }
 void _ChangeState(void *arg) {
     game_t *G = arg;
