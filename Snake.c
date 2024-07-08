@@ -115,12 +115,14 @@ void _menu_update(void *arg){
                         printf("@");
                     }else if(((YIndex == G->axis[LEN_BURN - G->i]->y) && (XIndex == G->axis[LEN_BURN - G->i]->x))
                           || ((YIndex == G->axis[G->i]->y) && (XIndex == G->axis[G->i]->x))){
-                        if(G->axis[LEN_BURN - G->i]->y > G->axis[LEN_BURN - 1 - G->i]->y){
+                        if((G->axis[LEN_BURN - G->i]->y < G->axis[LEN_BURN - 1 - G->i]->y) && (G->axis[LEN_BURN - G->i]->x == G->axis[LEN_BURN - 1 - G->i]->x)){
+                            printf("%d", LEN_BURN - G->i);
+                        }else if((G->axis[LEN_BURN - G->i]->y > G->axis[LEN_BURN - G->i - 1]->y) && (G->axis[LEN_BURN - G->i]->x == G->axis[LEN_BURN - G->i - 1]->x)){
                             printf("%d", G->i);
-                        }else if((G->axis[LEN_BURN - 2 - G->i]->x > G->axis[LEN_BURN - 1 - G->i]->x) && (G->axis[LEN_BURN - G->i]->y != G->axis[LEN_BURN - 1 - G->i]->y)){
-                            printf("%d", LEN_BURN - 1 - G->i);
-                        }else{
-                            printf("%d", G->i);
+                        }else if((G->axis[LEN_BURN - G->i]->x < G->axis[LEN_BURN - G->i - 1]->x) && (G->axis[LEN_BURN - G->i]->y == G->axis[LEN_BURN - G->i - 1]->y)){
+                            printf("%d", LEN_BURN - G->i);
+                        }else if((G->axis[LEN_BURN - G->i]->x > G->axis[LEN_BURN - G->i + 1]->x) && (G->axis[LEN_BURN - G->i]->y == G->axis[LEN_BURN - G->i + 1]->y)){
+                            printf("%d", LEN_BURN - G->i);
                         }
                         if(G->i < LEN_BURN)
                             G->i++;                  
