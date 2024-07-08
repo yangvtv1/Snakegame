@@ -49,10 +49,11 @@
 #define RIGHT                           6
 
 #define BURN_INIT                       3
-#define HARDWARE_1                    1
-#define HARDWARE_2                    2
-#define HARDWARE_3                    3
-#define HARDWARE_4                    4            
+#define LEN_BURN                        (BURN_INIT - 1)
+#define HARDWARE_1                      1
+#define HARDWARE_2                      2
+#define HARDWARE_3                      3
+#define HARDWARE_4                      4            
 #define HARDWARE(_name)               HARDWARE_##_name
      
 #define EOK  1
@@ -72,6 +73,11 @@ typedef struct {
     void (*menu_update)(void *);
     void (*menu_wait)(void *);
     void (*menu_fruit)(void *);
+    uint8_t (*ProcessMove)(void *);
+    void (*MoveDown)(void *);
+    void (*MoveUp)(void *);
+    void (*MoveLeft)(void *);
+    void (*MoveRight)(void *);
     void (*ChangeState)(void *);
     axis_t   *axis[100];
     uint32_t X;
@@ -88,7 +94,7 @@ typedef struct {
     uint8_t  Move6;
     uint8_t  Move2;
     uint32_t Point;
-    uint8_t  Position;
+    uint8_t  i;
 }game_t;
 
 typedef enum {
