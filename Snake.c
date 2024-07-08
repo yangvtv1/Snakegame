@@ -67,6 +67,7 @@ void Initial(void *arg) {
     G->Move8            = 3;
     G->Point            = 0;
     G->i                = 0;
+    G->TurnUpFlag       = false;
     for(int i = 0; i < BURN_INIT; i++){
         G->axis[i]    = (axis_t *)malloc(sizeof(axis_t));
     }
@@ -114,23 +115,49 @@ void _menu_update(void *arg){
                     }else if(YIndex == G->FruitY && XIndex == G->FruitX && G->Fruit){
                         printf("@");
                     }else if(((YIndex == G->axis[LEN_BURN - G->i]->y) && (XIndex == G->axis[LEN_BURN - G->i]->x))
-                          || ((YIndex == G->axis[G->i]->y) && (XIndex == G->axis[G->i]->x))){
+                          || ((YIndex == G->axis[G->i]->y) && (XIndex == G->axis[G->i]->x))
+                          ){
                         if(G->i != LEN_BURN){
-                            if((G->axis[LEN_BURN - G->i]->x < G->axis[LEN_BURN - G->i - 1]->x) && (G->axis[LEN_BURN - G->i]->y == G->axis[LEN_BURN - G->i - 1]->y))
-                                printf("%d", LEN_BURN - G->i);
-                        }else if((G->axis[LEN_BURN - G->i]->x > G->axis[LEN_BURN - G->i + 1]->x) && (G->axis[LEN_BURN - G->i]->y == G->axis[LEN_BURN - G->i + 1]->y)){
+                            if((G->axis[LEN_BURN - G->i]->x < G->axis[LEN_BURN - G->i - 1]->x) 
+                            && (G->axis[LEN_BURN - G->i]->y == G->axis[LEN_BURN - G->i - 1]->y)){
+                                if(G->TurnUpFlag){
+                                    printf("%d", G->i);                                  
+                                }else{
+                                    printf("%d", LEN_BURN - G->i);
+                                }
+                            }else if(G->axis[G->i]->x > G->axis[G->i + 1]->x 
+                                     && G->TurnUpFlag){
+                                printf("%d", G->i);
+                            }else if((G->axis[G->i]->x < G->axis[G->i + 1]->x) 
+                                 && (G->axis[G->i]->y == G->axis[G->i + 1]->y)){
+                                printf("%d", G->i);
+                            }else if((G->axis[LEN_BURN - G->i]->y < G->axis[LEN_BURN - G->i - 1]->y) 
+                                 && (G->axis[LEN_BURN - G->i]->x == G->axis[LEN_BURN - G->i - 1]->x)){
+                                    printf("%d", LEN_BURN - G->i);
+                            }else if((G->axis[G->i]->y < G->axis[G->i + 1]->y) 
+                                 && (G->axis[G->i]->x == G->axis[G->i + 1]->x)){
+                                printf("%d", G->i);
+                            }
+                        }else if((G->axis[LEN_BURN - G->i]->x > G->axis[LEN_BURN - G->i + 1]->x) 
+                              && (G->axis[LEN_BURN - G->i]->y == G->axis[LEN_BURN - G->i + 1]->y)){
                             printf("%d", LEN_BURN - G->i);
-                        }else if((G->axis[LEN_BURN - G->i]->y > G->axis[LEN_BURN - G->i - 1]->y) && (G->axis[LEN_BURN - G->i]->x == G->axis[LEN_BURN - G->i - 1]->x)){
+                        }else if((G->axis[G->i]->x < G->axis[G->i - 1]->x) && (G->TurnUpFlag)){
+                            G->TurnUpFlag = false;
+                            printf("%d", 2);
+                        }else if((G->axis[G->i]->x > G->axis[G->i - 1]->x)  
+                              && (G->axis[G->i]->y == G->axis[G->i - 1]->y)){
                             printf("%d", G->i);
-                        }else if((G->axis[LEN_BURN - G->i]->x < G->axis[LEN_BURN - G->i - 1]->x) && (G->axis[LEN_BURN - G->i]->y == G->axis[LEN_BURN - G->i - 1]->y)){
+                        }else if((G->axis[LEN_BURN - G->i]->y > G->axis[LEN_BURN - G->i + 1]->y) 
+                              && (G->axis[LEN_BURN - G->i]->x == G->axis[LEN_BURN - G->i + 1]->x)){
                             printf("%d", LEN_BURN - G->i);
-                        }else if((G->axis[LEN_BURN - G->i]->x > G->axis[LEN_BURN - G->i + 1]->x) && (G->axis[LEN_BURN - G->i]->y == G->axis[LEN_BURN - G->i + 1]->y)){
-                            printf("%d", LEN_BURN - G->i);
+                        }else if((G->axis[G->i]->y > G->axis[G->i - 1]->y) 
+                              && (G->axis[G->i]->x == G->axis[G->i - 1]->x)){
+                            printf("%d", G->i);
                         }
                         if(G->i < LEN_BURN)
                             G->i++;                  
                     }else if((XIndex == G->X/2) && (YIndex == G->Y)){
-                        printf("%d", G->Point);
+                        printf("%d.%d", G->Point, G->i);
                     }else if(((YIndex == G->axis[0]->y) && (XIndex+1 == G->X))
                              || (YIndex == G->axis[0]->y && XIndex == 1)){
                         printf("X");
@@ -245,6 +272,7 @@ void _MoveUp(void *arg){
                         G->axis[0]->y--;
                     }
                 }else{
+                    G->TurnUpFlag = true;
                     for(int j = 1; j <= BURN_INIT - 1; j++){
                         G->axis[j]->x++;
                     }

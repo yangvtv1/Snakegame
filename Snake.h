@@ -36,6 +36,7 @@
 #include <unistd.h>
 #include <stdbool.h>
 #include <errno.h>
+#include <stdbool.h>
 
 #define LOGA(fmt,...)  printf("[%s][%d]: "fmt"", __FUNCTION__, __LINE__, ##__VA_ARGS__);
 
@@ -95,6 +96,7 @@ typedef struct {
     uint8_t  Move2;
     uint32_t Point;
     uint8_t  i;
+    bool     TurnUpFlag;
 }game_t;
 
 typedef enum {
