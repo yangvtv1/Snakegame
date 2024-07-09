@@ -98,7 +98,9 @@ typedef struct {
     uint8_t  i;
     bool     KeepDirFlag;
     bool     DefaultStatusFlag;
-    bool     TurnUpFlag;
+    bool     ResetNumFlag;
+    bool     StatusUpRigthFlag;
+    bool     TurnFlag;
 }game_t;
 
 typedef enum {
