@@ -96,6 +96,8 @@ typedef struct {
     uint8_t  Move2;
     uint32_t Point;
     uint8_t  i;
+    bool     KeepDirFlag;
+    bool     DefaultStatusFlag;
     bool     TurnUpFlag;
 }game_t;
 

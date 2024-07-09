@@ -57,17 +57,19 @@ int main (void) {
 }
 void Initial(void *arg) {
     game_t *G = arg;
-    G->X                = 31;
-    G->Y                = 16;
-    G->CountUpdate      = 1;
-    G->Fruit            = 0;
-    G->Move2            = 3;
-    G->Move4            = 3;
-    G->Move6            = 3;
-    G->Move8            = 3;
-    G->Point            = 0;
-    G->i                = 0;
-    G->TurnUpFlag       = false;
+    G->X                 = 31;
+    G->Y                 = 16;
+    G->CountUpdate       = 1;
+    G->Fruit             = 0;
+    G->Move2             = 3;
+    G->Move4             = 3;
+    G->Move6             = 3;
+    G->Move8             = 3;
+    G->Point             = 0;
+    G->i                 = 0;
+    G->TurnUpFlag        = false;
+    G->DefaultStatusFlag = true;
+    G->KeepDirFlag       = false;
     for(int i = 0; i < BURN_INIT; i++){
         G->axis[i]    = (axis_t *)malloc(sizeof(axis_t));
     }
@@ -93,6 +95,7 @@ menu_t menu_tab[] = {
 };
 void _menu_update(void *arg){
     game_t *G = arg;
+    uint16_t Counter = 0;
     G->menu_fruit(G);
     while (G->CountUpdate) {
         system("@cls||clear");
@@ -105,7 +108,19 @@ void _menu_update(void *arg){
                         printf("#");
                     }
                 }
-                
+                /*
+                 * Description: mapping a point to axis coordinate
+                 *  1 2 3 4 5 6 7 8 9
+                 * 1+ + + + + + + + +
+                 * 2+ + + + + + + + +
+                 * 3+ + + + + + + + +
+                 * 4+ + + + 0 + + + +
+                 * 5+ + + 2 1 + + + +
+                 * 6+ + + + + + + + +
+                 * 7+ + + + + + + + +
+                 * 8+ + + + + + + + +
+                 * 9+ + + + + + + + +
+                 * */
                 if (G->axis[0]->x + 1 >= G->X || G->axis[0]->x <= 0 || G->axis[0]->y + 1 >= G->Y || G->axis[0]->y <= 0) {
                     return;
                 }else{
@@ -115,8 +130,8 @@ void _menu_update(void *arg){
                     }else if(YIndex == G->FruitY && XIndex == G->FruitX && G->Fruit){
                         printf("@");
                     }else if(((YIndex == G->axis[LEN_BURN - G->i]->y) && (XIndex == G->axis[LEN_BURN - G->i]->x))
-                          || ((YIndex == G->axis[G->i]->y) && (XIndex == G->axis[G->i]->x))
-                          ){
+                          || ((YIndex == G->axis[G->i]->y) && (XIndex == G->axis[G->i]->x))){
+                        Counter++;
                         if(G->i != LEN_BURN){
                             if((G->axis[LEN_BURN - G->i]->x < G->axis[LEN_BURN - G->i - 1]->x) 
                             && (G->axis[LEN_BURN - G->i]->y == G->axis[LEN_BURN - G->i - 1]->y)){
@@ -138,6 +153,16 @@ void _menu_update(void *arg){
                                  && (G->axis[G->i]->x == G->axis[G->i + 1]->x)){
                                 printf("%d", G->i);
                             }
+                        }else if((G->axis[LEN_BURN]->x < G->axis[LEN_BURN - G->i + 1]->x) 
+                              && (G->axis[LEN_BURN]->y == G->axis[LEN_BURN - G->i + 1]->y)
+                              && Counter == 2){
+                            G->DefaultStatusFlag = true;
+                            printf("%d", G->i);                            
+                        }else if((G->axis[LEN_BURN - G->i]->y < G->axis[LEN_BURN - G->i + 1]->y) 
+                              && (G->axis[LEN_BURN - G->i]->x == G->axis[LEN_BURN - G->i + 1]->x)
+                              && Counter == 1){
+                            G->DefaultStatusFlag = false;
+                            printf("%d", LEN_BURN - G->i);
                         }else if((G->axis[LEN_BURN - G->i]->x > G->axis[LEN_BURN - G->i + 1]->x) 
                               && (G->axis[LEN_BURN - G->i]->y == G->axis[LEN_BURN - G->i + 1]->y)){
                             printf("%d", LEN_BURN - G->i);
@@ -154,8 +179,12 @@ void _menu_update(void *arg){
                               && (G->axis[G->i]->x == G->axis[G->i - 1]->x)){
                             printf("%d", G->i);
                         }
-                        if(G->i < LEN_BURN)
-                            G->i++;                  
+                        if(G->i < LEN_BURN && G->KeepDirFlag == false){
+                            G->i++;
+                        }else if(G->i > 1 && G->KeepDirFlag == true && G->DefaultStatusFlag == true){
+                            G->i--;
+                            if(G->i == 1) G->KeepDirFlag = false;
+                        }
                     }else if((XIndex == G->X/2) && (YIndex == G->Y)){
                         printf("%d.%d", G->Point, G->i);
                     }else if(((YIndex == G->axis[0]->y) && (XIndex+1 == G->X))
@@ -203,16 +232,17 @@ void _menu_wait(void *arg){
     } else {
         G->Idx = WAIT;
     }
-    if(G->i) G->i = 0;
     G->ChangeState(G);
 }
 void _MoveDown(void *arg){
     game_t *G = arg;
+    uint8_t dir = 0;
     if(G->ProcessMove(G) == EOK){
         if(G->Move2 == 3) {
             _JumpStep(G);
             for(int i = 0; i < BURN_INIT - 1; i++){
                 if(G->axis[i]->x < G->axis[i+1]->x){
+                    dir = 0;
                     if(i == BURN_INIT - 2){
                         for(int j = 1; j <= BURN_INIT - 1; j++){
                             G->axis[j]->x--;
@@ -220,6 +250,7 @@ void _MoveDown(void *arg){
                         G->axis[0]->y++;
                     }
                 }else{
+                    dir = 0;
                     for(int j = 1; j <= BURN_INIT - 1; j++){
                         G->axis[j]->x++;
                     }
@@ -230,6 +261,7 @@ void _MoveDown(void *arg){
         }else if(G->Move2 == 2) {
             G->Move2 = 1;
             for(int i = 0; i < BURN_INIT - 1; i++){
+                dir = 0;
                 if((G->axis[i]->y > G->axis[i+1]->y) && (G->axis[i+1]->x < G->axis[i+2]->x)){
                     G->axis[BURN_INIT-1]->x--;
                     for(int j = 0; j < BURN_INIT - 1; j++){
@@ -237,6 +269,7 @@ void _MoveDown(void *arg){
                     }
                     break;
                 }else{
+                    dir = 0;
                     for(int j = 0; j < BURN_INIT - 1; j++){
                             G->axis[j]->y++;
                     }
@@ -247,6 +280,7 @@ void _MoveDown(void *arg){
         }
     }else{
         for(int i = 0; i < BURN_INIT - 1; i++){
+            dir = 0;
             if(G->axis[i]->x == G->axis[i+1]->x){
                 if(i+1 == BURN_INIT-1){
                     for(int j = 0; j < BURN_INIT; j++){
@@ -257,14 +291,17 @@ void _MoveDown(void *arg){
         }
         G->Move2=3;
     }
+    G->i = dir;
 }
 void _MoveUp(void *arg){
     game_t *G = arg;
+    uint8_t dir = 0;
     if(_ProcessMove(G) == EOK){
         if(G->Move8 == 3) {
             _JumpStep(G);
             for(int i = 0; i < BURN_INIT - 1; i++){
                 if(G->axis[i]->x < G->axis[i+1]->x){
+                    dir = 0;
                     if(i == BURN_INIT - 2){
                         for(int j = 1; j <= BURN_INIT - 1; j++){
                             G->axis[j]->x--;
@@ -272,6 +309,8 @@ void _MoveUp(void *arg){
                         G->axis[0]->y--;
                     }
                 }else{
+                    dir = 2;
+                    G->KeepDirFlag = true;
                     G->TurnUpFlag = true;
                     for(int j = 1; j <= BURN_INIT - 1; j++){
                         G->axis[j]->x++;
@@ -283,6 +322,7 @@ void _MoveUp(void *arg){
         }else if(G->Move8 == 2) {
             G->Move8 = 1;
             for(int i = 0; i < BURN_INIT - 1; i++){
+                dir = 0;
                 if((G->axis[i]->y < G->axis[i+1]->y) && (G->axis[i+1]->x < G->axis[i+2]->x)){
                     G->axis[BURN_INIT-1]->x--;
                     for(int j = 0; j < BURN_INIT - 1; j++){
@@ -290,6 +330,7 @@ void _MoveUp(void *arg){
                     }
                     break;
                 }else{
+                    dir = 0;
                     for(int j = 0; j < BURN_INIT - 1; j++){
                             G->axis[j]->y--;
                     }
@@ -300,6 +341,7 @@ void _MoveUp(void *arg){
         }
     }else {
         for(int i = 0; i < BURN_INIT - 1; i++){
+            dir = 0;
             if(G->axis[i]->x == G->axis[i+1]->x){
                 if(i+1 == BURN_INIT-1){
                     for(int j = 0; j < BURN_INIT; j++){
@@ -310,6 +352,7 @@ void _MoveUp(void *arg){
         }
         G->Move8 = 3;
     }
+    G->i = dir;
 }
 void _MoveLeft(void *arg){
     game_t *G = arg;
