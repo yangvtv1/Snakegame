@@ -100,6 +100,10 @@ typedef struct {
     bool     DefaultStatusFlag;
     bool     ResetNumFlag;
     bool     StatusUpRigthFlag;
+    bool     StatusDownLeftFlag;
+    bool     StatusDownLeft1Flag;
+    bool     StatusDownTraiFlag;
+    bool     StatusLeftDownFlag;
     bool     TurnFlag;
 }game_t;
 
