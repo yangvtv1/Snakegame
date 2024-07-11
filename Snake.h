@@ -68,6 +68,7 @@ typedef struct {
 typedef struct{
     uint32_t x;
     uint32_t y;
+    uint8_t  StateInh;
 }axis_t;
 
 typedef struct {
@@ -96,6 +97,7 @@ typedef struct {
     uint8_t  Move2;
     uint32_t Point;
     uint8_t  i;
+    uint16_t LenCurrent;
     bool     KeepDirFlag;
     bool     DefaultStatusFlag;
     bool     ResetNumFlag;
@@ -105,6 +107,7 @@ typedef struct {
     bool     StatusDownTraiFlag;
     bool     StatusDownRightFlag;
     bool     StatusLeftDownFlag;
+    bool     StatusMulRightDownFlag;
     bool     TurnFlag;
 }game_t;
 
