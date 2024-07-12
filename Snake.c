@@ -32,12 +32,8 @@
 void _menu_update(void *arg);
 void _menu_wait(void *arg);
 void Initial(void *arg);
-void _MoveDown(void *arg);
-void _MoveUp(void *arg);
-void _MoveLeft(void *arg);
-void _MoveRight(void *arg);
-uint8_t _ProcessMove(void *arg);
-void _JumpStep(void *arg);
+void _Move(void *arg);
+int _FindPos(void *arg, int _PosX, int _PosY);
 void _ChangeState(void *arg);
 void _menu_fruit(void *arg);
 game_t *game;
@@ -61,17 +57,8 @@ void Initial(void *arg) {
     G->Y                 = 16;
     G->CountUpdate       = 1;
     G->Fruit             = 0;
-    G->Move2             = 3;
-    G->Move4             = 3;
-    G->Move6             = 3;
-    G->Move8             = 3;
     G->Point             = 0;
     G->i                 = 0;
-    G->TurnFlag          = false;
-    G->ResetNumFlag      = false;
-    G->DefaultStatusFlag = false;
-    G->StatusUpRigthFlag = false;
-    G->KeepDirFlag       = false;
     for(int i = 0; i < BURN_INIT; i++){
         G->axis[i]    = (axis_t *)malloc(sizeof(axis_t));
     }
@@ -84,11 +71,8 @@ void Initial(void *arg) {
     G->menu_update     = &_menu_update;
     G->menu_wait       = &_menu_wait;
     G->menu_fruit      = &_menu_fruit;
-    G->ProcessMove     = &_ProcessMove;
-    G->MoveDown        = &_MoveDown;
-    G->MoveUp          = &_MoveUp;
-    G->MoveLeft        = &_MoveLeft;
-    G->MoveRight       = &_MoveRight;
+    G->FMove           = &_Move;
+    G->FindPos         = &_FindPos; 
     G->ChangeState     = &_ChangeState;
     G->Idx             = UPDATE;
 }
@@ -98,11 +82,13 @@ menu_t menu_tab[] = {
 };
 void _menu_update(void *arg){
     game_t *G = arg;
-    uint8_t CountRightUp = 0;
-    uint8_t CountUpRight = 0;
-    uint8_t CountLeftDown = 0;
-    uint8_t CountInit = 0;
     G->menu_fruit(G);
+    int index;
+    if(G->Move == UP || G->Move == LEFT)
+        index = G->LenCurrent;
+    else if(G->Move == DOWN || G->Move == RIGHT)
+        index = 0;
+        
     while (G->CountUpdate) {
         system("@cls||clear");
         for (int YIndex = 0; YIndex < G->Y + 2; YIndex++) {
@@ -129,14 +115,8 @@ void _menu_update(void *arg){
                         
                     }else if(YIndex == G->FruitY && XIndex == G->FruitX && G->Fruit){
                         printf("@");
-                    }else if((YIndex == G->axis[G->LenCurrent - 0]->y) && (XIndex == G->axis[G->LenCurrent - 0]->x)){
-                        printf("%d", G->LenCurrent - 0);
-                    }
-                    else if((YIndex == G->axis[G->LenCurrent - 1]->y) && (XIndex == G->axis[G->LenCurrent - 1]->x)){
-                        printf("%d", G->LenCurrent - 1);
-                    }
-                    else if((YIndex == G->axis[G->LenCurrent - 2]->y) && (XIndex == G->axis[G->LenCurrent - 2]->x)){
-                        printf("%d", G->LenCurrent - 2);
+                    }else if(G->FindPos(G, XIndex, YIndex) == EOK){
+                        printf("%d", G->Position);
                     }else if((XIndex == G->X/2) && (YIndex == G->Y)){
                         printf("%d", G->Point);
                     }else if(((YIndex == G->axis[0]->y) && (XIndex+1 == G->X))
@@ -177,13 +157,13 @@ void _menu_wait(void *arg){
     if((G->Move == DOWN) || (G->Move == LEFT) || (G->Move ==UP) || (G->Move == RIGHT)) {
         G->Idx = UPDATE;
         G->CountUpdate = 1;
-       G->MoveDown(G);
+       G->FMove(G);
     } else {
         G->Idx = WAIT;
     }
     G->ChangeState(G);
 }
-void _MoveDown(void *arg){
+void _Move(void *arg){
     game_t *G = arg;
     uint8_t dir = 0;
     for(int i = (G->LenCurrent - 1); i >= 0; i--){
@@ -198,269 +178,19 @@ void _MoveDown(void *arg){
     else if(G->Move == RIGHT)
         G->axis[0]->x++;
 }
-void _MoveUp(void *arg){
+
+int _FindPos(void *arg, int _PosX, int _PosY){
     game_t *G = arg;
-    uint8_t dir = 0;
-    if(_ProcessMove(G) == EOK){
-        if(G->Move8 == 3) {
-            _JumpStep(G);
-            for(int i = 0; i < BURN_INIT - 1; i++){
-                if(G->axis[i]->x < G->axis[i+1]->x){
-                    dir = 0;
-                    if(i == BURN_INIT - 2){
-                        for(int j = 1; j <= BURN_INIT - 1; j++){
-                            G->axis[j]->x--;
-                        }
-                        G->axis[0]->y--;
-                    }
-                }else{
-                    dir = 2;
-                    G->KeepDirFlag = true;
-                    for(int j = 1; j <= BURN_INIT - 1; j++){
-                        G->axis[j]->x++;
-                    }
-                    G->axis[0]->y--;                    
-                    break;
-                }
-            }
-        }else if(G->Move8 == 2) {
-            G->Move8 = 1;
-            for(int i = 0; i < BURN_INIT - 1; i++){
-                if((G->axis[i]->y < G->axis[i+1]->y) && (G->axis[i+1]->x < G->axis[i+2]->x)){
-                    dir = 0;
-                    G->axis[BURN_INIT-1]->x--;
-                    for(int j = 0; j < BURN_INIT - 1; j++){
-                        G->axis[j]->y--;
-                    }
-                    break;
-                }else{
-                    dir = 0;
-                    for(int j = 0; j < BURN_INIT - 1; j++){
-                            G->axis[j]->y--;
-                    }
-                    G->axis[BURN_INIT-1]->x++;
-                    break;
-                }
-            }
-        }
-    }else {
-        for(int i = 0; i < BURN_INIT - 1; i++){
-            if(G->axis[i]->x == G->axis[i+1]->x){
-                dir = 0;
-                if(i+1 == BURN_INIT-1){
-                    for(int j = 0; j < BURN_INIT; j++){
-                        G->axis[j]->y--;
-                    }
-                }
-            }
-        }
-        G->Move8 = 3;
-    }
-    G->i = dir;
-}
-void _MoveLeft(void *arg){
-    game_t *G = arg;
-    uint8_t dir = 0;
-    if(G->ProcessMove(G) == EOK){
-        if(G->Move4 == 3) {
-            _JumpStep(G);
-            for(int i = 0; i < BURN_INIT - 1; i++){
-                if(G->axis[i]->y < G->axis[i+1]->y){
-                    dir = 0;
-                    if(i == BURN_INIT - 2){
-                        for(int j = 1; j <= BURN_INIT - 1; j++){
-                            G->axis[j]->y--;
-                        }
-                        G->axis[0]->x--;
-                    }
-                }else{
-                    dir = 2;
-                    G->StatusDownLeftFlag = true;
-                    for(int j = 1; j <= BURN_INIT - 1; j++){
-                        G->axis[j]->y++;
-                    }
-                    G->axis[0]->x--;                    
-                    break;
-                }
-            }
-        }else if(G->Move4 == 2) {
-            G->Move4 = 1;
-            for(int i = 0; i < BURN_INIT - 1; i++){
-                if((G->axis[i]->x < G->axis[i+1]->x) && (G->axis[i+1]->y < G->axis[i+2]->y)){
-                    dir = 0;
-                    G->axis[BURN_INIT-1]->y--;
-                    for(int j = 0; j < BURN_INIT - 1; j++){
-                        G->axis[j]->x--;
-                    }
-                    break;
-                }else{
-                    dir = 2;
-                    G->StatusDownLeft1Flag = true;
-                    for(int j = 0; j < BURN_INIT - 1; j++){
-                            G->axis[j]->x--;
-                    }
-                    G->axis[BURN_INIT-1]->y++;
-                    break;
-                }
-            }
-        }
-    }else{
-        for(int i = 0; i < BURN_INIT - 1; i++){
-            if(G->axis[i]->y == G->axis[i+1]->y){
-                dir = 0;
-                if(i+1 == BURN_INIT-1){
-                    for(int j = 0; j < BURN_INIT; j++){
-                        G->axis[j]->x--;
-                    }
-                }
-            }
-        }
-        G->Move4 = 3;
-    }
-    G->i = dir;
-}
-void _MoveRight(void *arg){
-    game_t *G = arg;
-    uint8_t dir = 0;
-    if(G->ProcessMove(G) == EOK){
-        if(G->Move6 == 3) {
-             _JumpStep(G);
-            for(int i = 0; i < BURN_INIT - 1; i++){
-                if(G->axis[i]->y < G->axis[i+1]->y){
-                    dir = 1;
-                    G->KeepDirFlag = true;
-                    G->StatusUpRigthFlag = true;
-                    if(i == BURN_INIT - 2){
-                        for(int j = 1; j <= BURN_INIT - 1; j++){
-                            G->axis[j]->y--;
-                        }
-                        G->axis[0]->x++;
-                    }
-                }else{
-                    dir = 2;
-                    G->StatusDownRightFlag = true;
-                    for(int j = 1; j <= BURN_INIT - 1; j++){
-                        G->axis[j]->y++;
-                    }
-                    G->axis[0]->x++;                    
-                    break;
-                }
-            }
-        }else if(G->Move6 == 2) {
-            G->Move6 = 1;
-            for(int i = 0; i < BURN_INIT - 1; i++){
-                if((G->axis[i]->x > G->axis[i+1]->x) && (G->axis[i+1]->y < G->axis[i+2]->y)){
-                    dir = 0;
-                    G->axis[BURN_INIT-1]->y--;
-                    for(int j = 0; j < BURN_INIT - 1; j++){
-                        G->axis[j]->x++;
-                    }
-                    break;
-                }else{
-                    dir = 0;
-                    for(int j = 0; j < BURN_INIT - 1; j++){
-                            G->axis[j]->x++;
-                    }
-                    G->axis[BURN_INIT-1]->y++;
-                    break;
-                }
-            }
-        }
-    }else{
-        if(G->LenCurrent < BURN_INIT){
-            for(int i = 0; i < BURN_INIT - 1; i++){
-                dir = 0;
-                if(G->axis[i]->y == G->axis[i+1]->y){
-                    if(i+1 == BURN_INIT-1){
-                        for(int j = 0; j < BURN_INIT; j++){
-                            G->axis[j]->x++;
-                        }
-                    }
-                }
-            }
-        }else{
-            for(int i = 0; i < G->LenCurrent; i++){
-                dir = 0;
-                if(G->axis[i]->y == G->axis[i+1]->y){
-                    if(i == G->LenCurrent-1){
-                        for(int j = 0; j <= G->LenCurrent; j++){
-                            G->axis[j]->x++;
-                        }
-                    }
-                }
-            }
-        }
-        G->Move6 = 3;
-    }
-    G->i = dir;
-}
-uint8_t _ProcessMove(void *arg){
-    game_t *G = arg;
-    uint8_t ret = ERR;
-    uint32_t index = 0;
-    if(G->LenCurrent < BURN_INIT){
-        for(index = 0; index < BURN_INIT - 1; index++){
-            if(G->Move == DOWN || G->Move == UP){
-                if((G->axis[index]->x > G->axis[index + 1]->x) || (G->axis[index]->x < G->axis[index + 1]->x)){
-                    if(index == BURN_INIT - 2){
-                        ret = EOK;
-                        break;
-                    }
-                }
-            }else if(G->Move == LEFT || G->Move == RIGHT){
-                if((G->axis[index]->y > G->axis[index + 1]->y) || (G->axis[index]->y < G->axis[index + 1]->y)){
-                    if(index == BURN_INIT - 2){
-                        ret = EOK;
-                        break;
-                    }
-                }
-            }
-        }
-    }else{
-        for(index = 0; index < G->LenCurrent; index++){
-            if(G->Move == DOWN || G->Move == UP){
-                if((G->axis[index]->x > G->axis[index + 1]->x) || (G->axis[index]->x < G->axis[index + 1]->x)){
-                    if(index == G->LenCurrent - 1){
-                        ret = EOK;
-                        break;
-                    }
-                }
-            }else if(G->Move == LEFT || G->Move == RIGHT){
-                if((G->axis[index]->y > G->axis[index + 1]->y) || (G->axis[index]->y < G->axis[index + 1]->y)){
-                    if(index == G->LenCurrent - 1){
-                        ret = EOK;
-                        break;
-                    }
-                }
-            }        
+    int ret = ERR;
+    for(int i = G->LenCurrent; i >= 0; i--){
+        if(_PosX == G->axis[i]->x && _PosY == G->axis[i]->y){
+            G->Position = i;
+            ret = EOK;
         }
     }
-    return ret;
+    return ret;    
 }
-void _JumpStep(void *arg){
-    game_t *G = arg;
-    if(G->Move == DOWN){
-        G->Move2 = 2;
-        G->Move4 = 3;
-        G->Move6 = 3;
-        G->Move8 = 3;
-    }else if(G->Move == UP){
-        G->Move8 = 2;
-        G->Move2 = 3;
-        G->Move4 = 3;
-        G->Move6 = 3;       
-    }else if(G->Move == LEFT){
-        G->Move4 = 2;
-        G->Move2 = 3;
-        G->Move6 = 3;
-        G->Move8 = 3;      
-    }else if(G->Move == RIGHT){
-        G->Move6 = 2;
-        G->Move2 = 3;
-        G->Move4 = 3;
-        G->Move8 = 3;
-    }
-}
+
 void _menu_fruit(void *arg){
     game_t *G = arg;
     static int count = 0;
