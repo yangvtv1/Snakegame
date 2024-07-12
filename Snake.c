@@ -42,10 +42,6 @@ int main (void) {
     game = (game_t *)malloc(10 * sizeof(game_t));
     Initial(game);
     game->ChangeState(game);
-    //  while(1){
-    //     game->menu_fruit(game);
-    //  }
-
     printf("Game Over!!!\n");
     scanf("%hhd", &game->exit);
     free(game);
@@ -65,9 +61,8 @@ void Initial(void *arg) {
     for(int i = 0; i < BURN_INIT; i++){
         G->axis[i]->x    = (G->X/2)-i;
         G->axis[i]->y    = (G->Y/2);
-        //printf("%d %d %d %c\n", i, G->axis[i]->x, G->axis[i]->y, G->Position[i]);
     }
-    G->LenCurrent      = LEN_BURN;
+    G->LenCurrent      = BURN_INIT - 1;
     G->menu_update     = &_menu_update;
     G->menu_wait       = &_menu_wait;
     G->menu_fruit      = &_menu_fruit;
@@ -107,16 +102,12 @@ void _menu_update(void *arg){
                     if((G->axis[0]->y == G->FruitY) && (G->axis[0]->x == G->FruitX) && G->Fruit) {
                         G->Fruit = 0;
                         G->Point++;
-                        //G->LenCurrent++;
-                        //G->axis[G->LenCurrent]    = (axis_t *)malloc(sizeof(axis_t));
-                        //for(int i = G->LenCurrent; i >= 1; i--){
-                            //memcpy(G->axis[i], G->axis[i - 1], sizeof(G->axis[i]));
-                        //}
-                        
+                        G->LenCurrent++;
+                        G->axis[G->LenCurrent]    = (axis_t *)malloc(sizeof(axis_t));
                     }else if(YIndex == G->FruitY && XIndex == G->FruitX && G->Fruit){
                         printf("@");
                     }else if(G->FindPos(G, XIndex, YIndex) == EOK){
-                        printf("%d", G->Position);
+                        printf("%c", G->Position + 0x30);
                     }else if((XIndex == G->X/2) && (YIndex == G->Y)){
                         printf("%d", G->Point);
                     }else if(((YIndex == G->axis[0]->y) && (XIndex+1 == G->X))
