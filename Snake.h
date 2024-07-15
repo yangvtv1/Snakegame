@@ -63,7 +63,9 @@ typedef struct {
     void (*menu_update)(void *);
     void (*menu_wait)(void *);
     void (*menu_fruit)(void *);
+    void (*Initial)(void *);
     void (*FMove)(void *);
+    void (*MenuGame)(void *);
     int  (*FindPos)(void *, int , int );
     void (*ChangeState)(void *);
     axis_t   *axis[100];
@@ -80,9 +82,15 @@ typedef struct {
     uint8_t  i;
     uint16_t LenCurrent;
     uint32_t Position;
+    uint8_t  StartGame;
+    uint32_t Choose;
+    bool     DetectOutFlag;
+    bool     WelcomeFlag;
 }game_t;
 
 typedef enum {
     UPDATE,
-    WAIT
+    WAIT,
+    INITAL,
+    MENU
 }game_enum;
