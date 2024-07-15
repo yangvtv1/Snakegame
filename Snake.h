@@ -86,6 +86,7 @@ typedef struct {
     uint32_t Choose;
     bool     DetectOutFlag;
     bool     WelcomeFlag;
+    bool     StateFlag;
 }game_t;
 
 typedef enum {

@@ -33,6 +33,7 @@ void _menu_update(void *arg);
 void _menu_wait(void *arg);
 void Initial(void *arg);
 void _Move(void *arg);
+void Showfunc(uint8_t index);
 int _FindPos(void *arg, int _PosX, int _PosY);
 void _ChangeState(void *arg);
 void _MenuGame(void *arg);
@@ -62,6 +63,7 @@ void _Initial(void *arg) {
     G->Point             = 0;
     G->i                 = 0;
     G->DetectOutFlag     = false;
+    G->StateFlag         = false;
     for(int i = 0; i < BURN_INIT; i++){
         G->axis[i]    = (axis_t *)malloc(sizeof(axis_t));
     }
@@ -119,23 +121,21 @@ void _menu_update(void *arg){
                     }else if((G->FindPos(G, XIndex, YIndex) == EOK) && !G->StartGame && G->WelcomeFlag == false){
                         printf("%c", G->Position + 0x30);
                     }else if((G->FindPos(G, XIndex, YIndex) == EOK) && !G->StartGame && G->WelcomeFlag){
-                        if(Countpf == 0)
-                            printf("S");
-                        else if(Countpf == 1)
-                            printf("T");
-                        else if(Countpf == 2){
-                            printf("A");
-                        }else if(Countpf == 3){
-                            printf("R");
-                        }else if(Countpf == 4){
-                            printf("T");
-                            G->WelcomeFlag = false;
-                        }
+                        Showfunc(Countpf);
+                        if(Countpf == 4) G->WelcomeFlag = false;
                         Countpf++;
                     }else if(XIndex == G->X/2 && YIndex == G->Y/2 && G->StartGame){
                         printf("%d", G->StartGame);
-                    }else if((XIndex == G->X/2) && (YIndex == G->Y)){
-                        printf("%d", G->Point);
+                    }else if(((XIndex == G->X/2) && (YIndex == G->Y))
+                           || ((XIndex == G->X/2 - 1) && (YIndex == G->Y))){
+                        if((G->Point <= 9) && (XIndex == G->X/2 - 1))
+                            printf("0");
+                        else if((G->Point <= 9) && (XIndex == G->X/2))
+                            printf("%d", G->Point);
+                        else if((G->Point >= 10) && (XIndex == G->X/2 - 1))
+                            printf("%d",G->Point/10);
+                        else if((G->Point >= 10) && (XIndex == G->X/2))
+                            printf("%d",G->Point%10);
                     }else if(((YIndex == G->axis[0]->y) && (XIndex+1 == G->X))
                              || (YIndex == G->axis[0]->y && XIndex == 1)){
                         printf("X");
@@ -143,7 +143,10 @@ void _menu_update(void *arg){
                              || (YIndex && XIndex == 1)) {
                         if ((YIndex != G->axis[0]->y) || (YIndex && !XIndex))
                             if(YIndex && !XIndex) {
-                                printf("%02d", YIndex);
+                                if(YIndex%2 == 0)
+                                    printf("\033[1;31m%02d", YIndex);
+                                else
+                                    printf("\033[1;34m%02d", YIndex);
                             }else if((YIndex && XIndex) || (YIndex && XIndex == 1)){
                                 printf("X");
                             }
@@ -181,11 +184,10 @@ void _menu_update(void *arg){
 }
 void _menu_wait(void *arg){
     game_t *G = arg;
-    static bool StateFlag = false;
     static bool OnlyAcessFlag = false;
     
-    if(StateFlag == false){
-        StateFlag = true;
+    if(G->StateFlag == false){
+        G->StateFlag = true;
         G->WelcomeFlag = true;
         OnlyAcessFlag = true;
         G->Idx = UPDATE;
@@ -220,6 +222,20 @@ void _Move(void *arg){
         G->axis[0]->x--;
     else if(G->Move == RIGHT)
         G->axis[0]->x++;
+}
+
+void Showfunc(uint8_t index){
+    if(index == 0)
+        printf("S");
+    else if(index == 1)
+        printf("T");
+    else if(index == 2){
+        printf("A");
+    }else if(index == 3){
+        printf("R");
+    }else if(index == 4){
+        printf("T");
+    }    
 }
 
 int _FindPos(void *arg, int _PosX, int _PosY){
