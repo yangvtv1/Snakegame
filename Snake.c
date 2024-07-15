@@ -95,7 +95,7 @@ void _menu_update(void *arg){
     bool CountDownFlag = false;
     static uint8_t Countpf = 0;
     G->Idx = WAIT;
-    
+    G->FWrite = fopen(FILEPATH, MODE_WRITE);
     while (G->CountUpdate > 0 || G->StartGame > 0) {
         system("@cls||clear");
         for (int YIndex = 0; YIndex < G->Y + 2; YIndex++) {
@@ -103,8 +103,10 @@ void _menu_update(void *arg){
                 if(!YIndex) {
                     if((!YIndex && !XIndex) || (!YIndex && XIndex == 1)){
                         printf(" ");
+                        fprintf(G->FWrite, " ");
                     }else{
                         printf("#");
+                        fprintf(G->FWrite, "#");
                     }
                 }
 
@@ -118,8 +120,10 @@ void _menu_update(void *arg){
                         G->axis[G->LenCurrent]    = (axis_t *)malloc(sizeof(axis_t));
                     }else if(YIndex == G->FruitY && XIndex == G->FruitX && G->Fruit && !G->StartGame && G->WelcomeFlag == false){
                         printf("@");
+                        fprintf(G->FWrite, "@");
                     }else if((G->FindPos(G, XIndex, YIndex) == EOK) && !G->StartGame && G->WelcomeFlag == false){
                         printf("%c", G->Position + 0x30);
+                        fprintf(G->FWrite,"%c", G->Position + 0x30);
                     }else if((G->FindPos(G, XIndex, YIndex) == EOK) && !G->StartGame && G->WelcomeFlag){
                         Showfunc(Countpf);
                         if(Countpf == 4) G->WelcomeFlag = false;
@@ -128,43 +132,58 @@ void _menu_update(void *arg){
                         printf("%d", G->StartGame);
                     }else if(((XIndex == G->X/2) && (YIndex == G->Y))
                            || ((XIndex == G->X/2 - 1) && (YIndex == G->Y))){
-                        if((G->Point <= 9) && (XIndex == G->X/2 - 1))
+                        if((G->Point <= 9) && (XIndex == G->X/2 - 1)){
                             printf("0");
-                        else if((G->Point <= 9) && (XIndex == G->X/2))
+                            fprintf(G->FWrite,"0");
+                        }else if((G->Point <= 9) && (XIndex == G->X/2)){
                             printf("%d", G->Point);
-                        else if((G->Point >= 10) && (XIndex == G->X/2 - 1))
+                            fprintf(G->FWrite,"%d", G->Point);
+                        }else if((G->Point >= 10) && (XIndex == G->X/2 - 1)){
                             printf("%d",G->Point/10);
-                        else if((G->Point >= 10) && (XIndex == G->X/2))
+                            fprintf(G->FWrite,"%d", G->Point/10);
+                        }else if((G->Point >= 10) && (XIndex == G->X/2)){
                             printf("%d",G->Point%10);
+                            fprintf(G->FWrite,"%d", G->Point%10);
+                        }
                     }else if(((YIndex == G->axis[0]->y) && (XIndex+1 == G->X))
                              || (YIndex == G->axis[0]->y && XIndex == 1)){
                         printf("X");
+                        fprintf(G->FWrite,"X");
                     }else if((YIndex && !XIndex) || (YIndex && (XIndex+1 == G->X))
                              || (YIndex && XIndex == 1)) {
                         if ((YIndex != G->axis[0]->y) || (YIndex && !XIndex))
                             if(YIndex && !XIndex) {
-                                if(YIndex%2 == 0)
+                                if(YIndex%2 == 0){
                                     printf("\033[1;31m%02d", YIndex);
-                                else
+                                    fprintf(G->FWrite,"%02d", YIndex);
+                                }else{
                                     printf("\033[1;34m%02d", YIndex);
+                                    fprintf(G->FWrite,"%02d", YIndex);
+                                }
                             }else if((YIndex && XIndex) || (YIndex && XIndex == 1)){
                                 printf("X");
+                                fprintf(G->FWrite,"X");
                             }
                     }else if(YIndex && (YIndex + 1 != G->Y)){
                         if((YIndex == G->Y + 1) && (XIndex+1 != G->X)){
                             printf("X");
+                            fprintf(G->FWrite,"X");
                         }else{
                             printf(" ");
+                            fprintf(G->FWrite," ");
                         }
                     }
                 }
                 
                 if((YIndex + 1 == G->Y) && (XIndex+1 != G->X) && (XIndex+2 != G->X)) {
-                    if(XIndex != 1)
+                    if(XIndex != 1){
                         printf("X");
+                        fprintf(G->FWrite,"X");
+                    }
                 }
             }
             printf("\n");
+            fprintf(G->FWrite,"\n");
         }
         if(G->StartGame){
             G->StartGame--;
@@ -178,6 +197,7 @@ void _menu_update(void *arg){
             G->CountUpdate--;
         }
     }
+    fclose(G->FWrite);
     if(G->DetectOutFlag) {G->Idx = MENU; system("@cls||clear");}
     if(Countpf == 5) {sleep(1); Countpf = 0;}
     G->ChangeState(G);

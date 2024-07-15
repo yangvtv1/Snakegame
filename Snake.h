@@ -49,6 +49,9 @@
 #define EOK  1
 #define ERR  0
 
+#define FILEPATH        "/home/ubuntu/01_General/01_demo_eg/Snake/snakelog.txt"
+#define MODE_WRITE      "w"
+#define MODE_READ       "r"
 
 typedef struct {
     void (*PointerFunction)(void*);
@@ -68,6 +71,7 @@ typedef struct {
     void (*MenuGame)(void *);
     int  (*FindPos)(void *, int , int );
     void (*ChangeState)(void *);
+    FILE *FWrite;
     axis_t   *axis[100];
     uint32_t X;
     uint32_t Y;
